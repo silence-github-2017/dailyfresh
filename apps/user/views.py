@@ -1,16 +1,14 @@
 from django.shortcuts import render, redirect
-from django.core.mail import send_mail
 from django.contrib.auth import authenticate, login, logout
 from django.core.paginator import Paginator
 from django.views.generic import View
 from django.http import HttpResponse, JsonResponse
 from django.conf import settings
-from django.urls import resolve
-
+# 动态解析路由
+from django.urls import reverse
 from apps.user.models import User, Address
 from apps.goods.models import GoodsSKU
-from apps.order.models import OrderInfo,OrderGoods
-from django.core.
+from apps.order.models import OrderInfo, OrderGoods
 from celery_tasks.tasks import send_register_active_email
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 from itsdangerous import SignatureExpired
@@ -51,20 +49,21 @@ def register(request):
         # 校验用户名是否重复
         try:
             user = User.objects.get(username=username)
+        # 用户名不存在
         except User.DoesNotExist:
-            # 用户名不存在
             user = None
-
         if user:
             # 用户名已存在
             return render(request, 'register.html', {'errmsg': '用户名已存在'})
 
-        # 进行业务处理: 进行用户注册
+        # 进行业务处理:
+        # 利用django 内置的User类的方法
         user = User.objects.create_user(username, email, password)
+        # 用户激活状态
         user.is_active = 0
         user.save()
-
         # 返回应答, 跳转到首页
+        # goods 应用名称  index 为 url 对应的index
         return redirect(reverse('goods:index'))
 
 
@@ -83,10 +82,10 @@ def register_handle(request):
 
     # 校验邮箱
     if not re.match(r'^[a-z0-9][\w.\-]*@[a-z0-9\-]+(\.[a-z]{2,5}){1,2}$', email):
-        return render(request, 'register.html', {'errmsg':'邮箱格式不正确'})
+        return render(request, 'register.html', {'errmsg': '邮箱格式不正确'})
 
     if allow != 'on':
-        return render(request, 'register.html', {'errmsg':'请同意协议'})
+        return render(request, 'register.html', {'errmsg': '请同意协议'})
 
     # 校验用户名是否重复
     try:
@@ -109,12 +108,15 @@ def register_handle(request):
 
 
 # /user/register
+# 使用类视图来处理不同的请求
 class RegisterView(View):
     '''注册'''
+    # get 请求方式
     def get(self, request):
         '''显示注册页面'''
         return render(request, 'register.html')
 
+    # post 请求方式
     def post(self, request):
         '''进行注册处理'''
         # 接收数据
@@ -154,10 +156,13 @@ class RegisterView(View):
         # 发送激活邮件，包含激活链接: http://127.0.0.1:8000/user/active/3
         # 激活链接中需要包含用户的身份信息, 并且要把身份信息进行加密
 
-        # 加密用户的身份信息，生成激活token
-        serializer = Serializer(settings.SECRET_KEY, 3600)
-        info = {'confirm':user.id}
-        token = serializer.dumps(info) # bytes
+        # 加密用户的身份信息，生成激活token 秘钥  过期时间 单位为秒 3600 为1个小时
+        serializer = Serializer(secret_key=settings.SECRET_KEY, expires_in=3600)
+        # 对user_id 进行加密
+        info = {'confirm': user.id}
+        # 解密后的内容为byte类型
+        token = serializer.dumps(info)
+        # 将byte类型转化为字符串
         token = token.decode()
 
         # 发邮件
@@ -169,6 +174,7 @@ class RegisterView(View):
 
 class ActiveView(View):
     '''用户激活'''
+    # 关键字
     def get(self, request, token):
         '''进行用户激活'''
         # 进行解密，获取要激活的用户信息
@@ -180,11 +186,11 @@ class ActiveView(View):
 
             # 根据id获取用户信息
             user = User.objects.get(id=user_id)
+            # 将用户的激活标记为1
             user.is_active = 1
             user.save()
-
             # 跳转到登录页面
-            return redirect(reverse('user:login'))
+            return redirect(resolve('user:login'))
         except SignatureExpired as e:
             # 激活链接已过期
             return HttpResponse('激活链接已过期')

@@ -28,7 +28,7 @@ def send_register_active_email(to_email, username, token):
     sender = settings.EMAIL_FROM
     receiver = [to_email]
     html_message = '<h1>%s, 欢迎您成为天天生鲜注册会员</h1>请点击下面链接激活您的账户<br/><a href="http://127.0.0.1:8000/user/active/%s">http://127.0.0.1:8000/user/active/%s</a>' % (username, token, token)
-
+    # message 文本类型的邮件  html_message HTML类型的邮件
     send_mail(subject, message, sender, receiver, html_message=html_message)
     time.sleep(5)
 
