@@ -7,21 +7,28 @@ import time
 
 # 在任务处理者一端加这几句
 import os
-# import django
+import django
 # os.environ.setdefault("DJANGO_SETTINGS_MODULE", "dailyfresh.settings")
 # django.setup()
 
-from goods.models import GoodsType,IndexGoodsBanner,IndexPromotionBanner,IndexTypeGoodsBanner
+from apps.goods.models import GoodsType, IndexGoodsBanner, IndexPromotionBanner,IndexTypeGoodsBanner
 from django_redis import get_redis_connection
 
-# 创建一个Celery类的实例对象
-app = Celery('celery_tasks.tasks', broker='redis://172.16.179.142:6379/8')
+# 创建一个Celery类的实例对象 任务队列
+# 'redis://127.0.0.1:6379/8'  host 端口  数据库序号
+app = Celery('celery_tasks.tasks', broker='redis://127.0.0.1:6379/0')
 
 
-# 定义任务函数
+# 定义任务函数  任务 装饰器
 @app.task
 def send_register_active_email(to_email, username, token):
+    """
     '''发送激活邮件'''
+    :param to_email:  收件人
+    :param username:
+    :param token:
+    :return:
+    """
     # 组织邮件信息
     subject = '天天生鲜欢迎信息'
     message = ''

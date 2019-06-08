@@ -41,10 +41,10 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'tinymce',  # 富文本编辑器
     'haystack',  # 注册全文检索框架
-    'user',  # 用户模块
-    'goods',  # 商品模块
-    'cart',  # 购物车模块
-    'order',  # 订单模块
+    'apps.user',  # 用户模块
+    'apps.goods',  # 商品模块
+    'apps.cart',  # 购物车模块
+    'apps.order',  # 订单模块
 )
 
 MIDDLEWARE_CLASSES = (
